@@ -172,53 +172,53 @@
     </div>
   </div>
 
-  <script>
-    (function(){
-      const KEY = 'stronghold_gate_runs_v1';
+ <script>
+(function(){
+  const KEY = 'stronghold_gate_runs_v1';
 
-      // Reset helper: ?reset=1 clears local lock for testing
-      if(location.search.includes('reset=1')){
-        try{ localStorage.removeItem(KEY); }catch(e){}
-        const url = location.origin + location.pathname;
-        history.replaceState({}, '', url);
-      }
+  if(location.search.includes('reset=1')){
+    try{ localStorage.removeItem(KEY); }catch(e){}
+    const url = location.origin + location.pathname;
+    history.replaceState({}, '', url);
+  }
 
-      // ===== Countdown target (local time): 13 April 2026, 00:00:00 =====
-      const target = new Date(2026, 3, 13, 0, 0, 0); // months are 0-based (3 = April)
+  // ===== Countdown target: 13 April 2026, 12:01 AM AEST =====
+  // AEST is UTC+10 (no daylight saving in April), so UTC time is 13 April 2026, 02:01 UTC
+  const targetUTC = Date.UTC(2026, 3, 13, 2, 1, 0); // months are 0-based, so 3 = April
 
-      function two(n){ return n<10 ? '0'+n : ''+n; }
-      function renderCountdown(el){
-        const now = new Date();
-        let diff = Math.max(0, target - now);
-        const d = Math.floor(diff / (1000*60*60*24)); diff -= d*(1000*60*60*24);
-        const h = Math.floor(diff / (1000*60*60)); diff -= h*(1000*60*60);
-        const m = Math.floor(diff / (1000*60)); diff -= m*(1000*60);
-        const s = Math.floor(diff / 1000);
-        el.textContent = `T‒ ${d}d:${two(h)}h:${two(m)}m:${two(s)}s`;
-      }
+  function two(n){ return n<10 ? '0'+n : ''+n; }
+  function renderCountdown(el){
+    const now = new Date();
+    let diff = Math.max(0, targetUTC - now.getTime());
+    const d = Math.floor(diff / (1000*60*60*24)); diff -= d*(1000*60*60*24);
+    const h = Math.floor(diff / (1000*60*60)); diff -= h*(1000*60*60);
+    const m = Math.floor(diff / (1000*60)); diff -= m*(1000*60);
+    const s = Math.floor(diff / 1000);
 
-      // Start both countdowns (main and closed) if present
-      const cd = document.getElementById('countdown');
-      const cdClosed = document.getElementById('cdClosed');
-      if(cd){ renderCountdown(cd); setInterval(()=>renderCountdown(cd), 1000); }
-      if(cdClosed){ renderCountdown(cdClosed); setInterval(()=>renderCountdown(cdClosed), 1000); }
+    // Add fixed clue about AEST time
+    el.textContent = `T‒ ${d}d:${two(h)}h:${two(m)}m:${two(s)}s  (13 Apr 2026 — 12:01 AEST)`;
+  }
 
-      // ===== Lock after 3 full runs =====
-      let runs = 0;
-      try{
-        runs = parseInt(localStorage.getItem(KEY) || '0', 10);
-        if(runs >= 3){
-          document.getElementById('closed').style.display='flex';
-          return;
-        }
-      }catch(e){ /* continue if storage blocked */ }
+  const cd = document.getElementById('countdown');
+  const cdClosed = document.getElementById('cdClosed');
+  if(cd){ renderCountdown(cd); setInterval(()=>renderCountdown(cd), 1000); }
+  if(cdClosed){ renderCountdown(cdClosed); setInterval(()=>renderCountdown(cdClosed), 1000); }
 
-      const gate = document.getElementById('gate');
-      const final = document.getElementById('final');
-      const hgWrap = document.getElementById('hgWrap');
-      const out = document.getElementById('typed');
+  let runs = 0;
+  try{
+    runs = parseInt(localStorage.getItem(KEY) || '0', 10);
+    if(runs >= 3){
+      document.getElementById('closed').style.display='flex';
+      return;
+    }
+  }catch(e){}
 
-      const text = `The gate will open
+  const gate = document.getElementById('gate');
+  const final = document.getElementById('final');
+  const hgWrap = document.getElementById('hgWrap');
+  const out = document.getElementById('typed');
+
+  const text = `The gate will open
 to three truths
 spoken in the right order.
 
@@ -228,37 +228,40 @@ The third must outlast time.
 
 Name them.`;
 
-      const prefersReduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const prefersReduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-      function endSequence(){
-        hgWrap.classList.remove('show');
-        gate.classList.add('fade-out');
-        setTimeout(()=>{
-          gate.style.display='none';
-          final.style.display='flex';
-          try{
-            const current = parseInt(localStorage.getItem(KEY) || '0', 10);
-            localStorage.setItem(KEY, String((isNaN(current)?0:current) + 1));
-          }catch(e){}
-        }, 700);
-      }
+  function endSequence(){
+    hgWrap.classList.remove('show');
+    gate.classList.add('fade-out');
+    setTimeout(()=>{
+      gate.style.display='none';
+      final.style.display='flex';
+      try{
+        const current = parseInt(localStorage.getItem(KEY) || '0', 10);
+        localStorage.setItem(KEY, String((isNaN(current)?0:current) + 1));
+      }catch(e){}
+    }, 700);
+  }
 
-      function afterTyping(){
-        hgWrap.classList.add('show');     // show hourglass for ~10s
-        setTimeout(endSequence, 10000);   // then fade to final
-      }
+  function afterTyping(){
+    hgWrap.classList.add('show');
+    setTimeout(endSequence, 10000);
+  }
 
-      if(prefersReduced){
-        out.textContent = text;
-        afterTyping();
-      } else {
-        let i = 0;
-        const delay = 36; // slower typing for drama
-        const timer = setInterval(()=>{
-          out.textContent = text.slice(0, ++i);
-          if(i>=text.length){ clearInterval(timer); afterTyping(); }
-        }, delay);
-      }
+  if(prefersReduced){
+    out.textContent = text;
+    afterTyping();
+  } else {
+    let i = 0;
+    const delay = 36;
+    const timer = setInterval(()=>{
+      out.textContent = text.slice(0, ++i);
+      if(i>=text.length){ clearInterval(timer); afterTyping(); }
+    }, delay);
+  }
+})();
+</script>
+
     })();
   </script>
 </body>
