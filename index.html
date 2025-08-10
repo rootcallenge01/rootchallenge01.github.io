@@ -26,6 +26,21 @@
     .typed{white-space:pre-wrap; font-size:22px; line-height:1.5; min-height:5.5em}
     .sig{margin-top:12px; color:var(--muted); font-size:15px; text-align:center}
 
+    /* Tap overlay */
+    .overlay{
+      position:fixed; inset:0; background:#000; display:flex; align-items:center; justify-content:center;
+      transition: opacity .5s ease, visibility .5s ease; z-index:50;
+    }
+    .overlay.hide{opacity:0; visibility:hidden}
+    .pill{
+      color:var(--ink); border:1px solid #2a2f35; padding:12px 16px; border-radius:14px;
+      background:linear-gradient(180deg,#0e1318,#0a0d12);
+      box-shadow:0 0 0 1px rgba(255,255,255,.04), 0 8px 30px rgba(0,0,0,.6), 0 0 80px var(--glow);
+      font-family:ui-monospace,Menlo,Consolas,monospace; letter-spacing:.06em; cursor:pointer;
+    }
+    .pill b{color:var(--gold)}
+    .hint{margin-top:10px; color:#6d7a88; font-size:12px; text-align:center}
+
     /* Glitchy countdown */
     .countwrap{margin-top:14px; display:flex; justify-content:center}
     .countdown{
@@ -54,7 +69,7 @@
     /* Ancient / glitch hourglass (overlay, centered) */
     .hourglass-wrap{
       position:fixed; inset:0; display:flex; align-items:center; justify-content:center;
-      pointer-events:none; opacity:0; transition:opacity .35s ease;
+      pointer-events:none; opacity:0; transition:opacity .35s ease; z-index:40;
     }
     .hourglass-wrap.show{opacity:1}
     .hourglass{
@@ -131,6 +146,14 @@
     <small>— Within the Command Spine</small>
   </div>
 
+  <!-- Subtle tap-to-begin overlay -->
+  <div id="overlay" class="overlay" role="button" tabindex="0" aria-label="Begin the Root Challenge">
+    <div>
+      <div class="pill"><b>Tap</b> to begin</div>
+      <div class="hint">or press Enter</div>
+    </div>
+  </div>
+
   <!-- Main gate -->
   <main class="wrap" aria-live="polite" id="gate">
     <div class="center">
@@ -176,13 +199,7 @@
         history.replaceState({}, '', location.origin + location.pathname);
       }
 
-      // ===== Timing targets =====
-      const TYPING_MS = 20000;   // 20s typing phase
-      const HOURGLASS_MS = 10000; // 10s hourglass
-      // Total = 30s from load to hourglass finish
-
-      // ===== Countdown target: 13 April 2026, 12:01 AM AEST =====
-      // AEST is UTC+10 in April ⇒ 13 Apr 2026 02:01:00 UTC
+      // ===== Countdown target: 13 April 2026, 12:01 AM AEST (UTC+10) =====
       const targetUTC = Date.UTC(2026, 3, 13, 2, 1, 0);
 
       function two(n){ return n<10 ? '0'+n : ''+n; }
@@ -196,6 +213,7 @@
         el.innerHTML = `T‒ ${d}d:${two(h)}h:${two(m)}m:${two(s)}s <span class="aest">(13 Apr 2026 — 12:01 AEST)</span>`;
       }
 
+      // Start countdowns (main + closed)
       const cd = document.getElementById('countdown');
       const cdClosed = document.getElementById('cdClosed');
       if(cd){ renderCountdown(cd); setInterval(()=>renderCountdown(cd), 1000); }
@@ -204,13 +222,19 @@
       // ===== Lock after 3 full runs =====
       try{
         const runs = parseInt(localStorage.getItem(KEY) || '0', 10);
-        if(runs >= 3){ document.getElementById('closed').style.display='flex'; return; }
+        if(runs >= 3){ document.getElementById('closed').style.display='flex'; document.getElementById('overlay').style.display='none'; return; }
       }catch(e){}
 
       const gate = document.getElementById('gate');
       const final = document.getElementById('final');
       const hgWrap = document.getElementById('hgWrap');
       const out = document.getElementById('typed');
+      const overlay = document.getElementById('overlay');
+
+      // ===== Sequence timings =====
+      const TYPING_MS = 20000;     // 20s typing
+      const HOURGLASS_MS = 10000;  // 10s hourglass
+      // Total ≈ 30s from TAP to hourglass finish.
 
       const text = `The gate will open
 to three truths
@@ -223,6 +247,78 @@ The third must outlast time.
 Name them.`;
 
       const prefersReduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+      // ===== Web Audio (hum + heartbeat + Morse) =====
+      let ac, master, humGain, beatGain, chimeGain;
+      const PHRASE = "ONLY IN THE ROOST OF THE IRON-FEATHERED ORACLE WILL THE ARCHITECTS ATTEND";
+      const MORSE = {A:'.-',B:'-...',C:'-.-.',D:'-..',E:'.',F:'..-.',G:'--.',H:'....',I:'..',J:'.---',K:'-.-',L:'.-..',M:'--',N:'-.',O:'---',P:'.--.',Q:'--.-',R:'.-.',S:'...',T:'-',U:'..-',V:'...-',W:'.--',X:'-..-',Y:'-.--',Z:'--..','0':'-----','1':'.----','2':'..---','3':'...--','4':'....-','5':'.....','6':'-....','7':'--...','8':'---..','9':'----.'};
+
+      function initAudio(){
+        if(ac) return;
+        try{
+          ac = new (window.AudioContext || window.webkitAudioContext)();
+          master = ac.createGain(); master.gain.value = 0.6; master.connect(ac.destination);
+
+          // Hum
+          const humOsc = ac.createOscillator(); humOsc.type='sine'; humOsc.frequency.value = 60;
+          humGain = ac.createGain(); humGain.gain.value = 0.06;
+          humOsc.connect(humGain).connect(master); humOsc.start();
+
+          // Heartbeat (soft thump ~every 8s)
+          beatGain = ac.createGain(); beatGain.gain.value = 0.0; beatGain.connect(master);
+          const beatOsc = ac.createOscillator(); beatOsc.type='sine'; beatOsc.frequency.value = 50;
+          beatOsc.connect(beatGain); beatOsc.start();
+          const now = ac.currentTime;
+          for(let k=0;k<12;k++){
+            const at = now + 4 + k*8;
+            beatGain.gain.setValueAtTime(0.0, at);
+            beatGain.gain.linearRampToValueAtTime(0.08, at + 0.02);
+            beatGain.gain.exponentialRampToValueAtTime(0.001, at + 0.28);
+          }
+
+          // Chimes bus
+          chimeGain = ac.createGain(); chimeGain.gain.value = 1.0; chimeGain.connect(master);
+        }catch(e){ /* audio failed; proceed silently */ }
+      }
+
+      function scheduleMorse(){
+        if(!ac) return;
+        const unit = 0.10; // 100ms dot
+        const baseFreq = 1320; // chime pitch
+        let t = ac.currentTime + 0.5; // slight delay
+
+        function tone(len){
+          const osc = ac.createOscillator(); osc.type='sine';
+          osc.frequency.value = baseFreq + (Math.random()-0.5)*10; // tiny detune
+          const g = ac.createGain(); g.gain.value = 0.0;
+          // faint echo
+          const dly = ac.createDelay(0.3); dly.delayTime.value = 0.18 + Math.random()*0.05;
+          const fb = ac.createGain(); fb.gain.value = 0.2;
+          g.connect(dly); dly.connect(fb); fb.connect(dly); dly.connect(master);
+
+          osc.connect(g); g.connect(chimeGain);
+          osc.start(t);
+          g.gain.setValueAtTime(0.0, t);
+          g.gain.linearRampToValueAtTime(0.15, t+0.01);
+          g.gain.setTargetAtTime(0.0, t+len-0.01, 0.02);
+          osc.stop(t + len + 0.05);
+          t += len;
+        }
+
+        const up = PHRASE.toUpperCase();
+        for(let i=0;i<up.length;i++){
+          const ch = up[i];
+          if(ch===' '){ t += unit*7; continue; } // word gap
+          const code = MORSE[ch]; if(!code) continue;
+          for(let j=0;j<code.length;j++){
+            tone(code[j]==='.' ? unit*1 : unit*3);
+            t += unit*1; // intra-char gap
+          }
+          t += unit*2; // letter gap extra
+          t += (Math.random()-0.5)*0.04; // organic wobble
+        }
+        chimeGain.gain.setTargetAtTime(0.0, t+0.2, 0.4);
+      }
 
       function endSequence(){
         hgWrap.classList.remove('show');
@@ -238,28 +334,52 @@ Name them.`;
       }
 
       function afterTyping(){
-        hgWrap.classList.add('show');           // show for exactly 10s
-        setTimeout(endSequence, HOURGLASS_MS);  // then fade to final
+        hgWrap.classList.add('show');     // show hourglass
+        scheduleMorse();                  // play Morse during hourglass
+        setTimeout(endSequence, 10000);   // 10s, then fade to final
       }
 
-      if(prefersReduced){
-        // show full text, but still respect the 20s phase timing
-        out.textContent = text;
-        setTimeout(afterTyping, TYPING_MS);
-      } else {
-        const start = performance.now();
-        let i = 0;
-        const perChar = Math.max(30, Math.floor(TYPING_MS / text.length)); // auto-fit to ~20s
-        const timer = setInterval(()=>{
-          out.textContent = text.slice(0, ++i);
-          if(i>=text.length){
-            clearInterval(timer);
-            const elapsed = performance.now() - start;
-            const remaining = Math.max(0, TYPING_MS - elapsed);
-            setTimeout(afterTyping, remaining);
-          }
-        }, perChar);
+      function startSequence(){
+        // Start typing timeline (~20s), then hourglass
+        if(prefersReduced){
+          document.getElementById('typed').textContent = text;
+          setTimeout(afterTyping, 20000);
+        } else {
+          const start = performance.now();
+          const out = document.getElementById('typed');
+          let i = 0;
+          const perChar = Math.max(30, Math.floor(20000 / text.length));
+          const timer = setInterval(()=>{
+            out.textContent = text.slice(0, ++i);
+            if(i>=text.length){
+              clearInterval(timer);
+              const elapsed = performance.now() - start;
+              const remaining = Math.max(0, 20000 - elapsed);
+              setTimeout(afterTyping, remaining);
+            }
+          }, perChar);
+        }
       }
+
+      // Overlay interaction → init audio + hide overlay + start sequence
+      function begin(){
+        overlay.classList.add('hide');
+        // Audio
+        try{
+          initAudio();
+          if(ac && ac.state==='suspended'){ ac.resume().catch(()=>{}); }
+        }catch(e){}
+        // Start visuals
+        startSequence();
+      }
+
+      // Bind overlay events
+      overlay.addEventListener('click', begin, {once:true});
+      overlay.addEventListener('keydown', (e)=>{ if(e.key==='Enter' || e.key===' '){ e.preventDefault(); begin(); }}, {once:true});
+
+      // If gate is locked (3 runs), skip overlay entirely
+      // (Handled above in lock check)
+
     })();
   </script>
 </body>
