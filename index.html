@@ -6,7 +6,10 @@
   <title>The Stronghold Codex — Gate Closed</title>
   <meta name="robots" content="noindex,nofollow" />
   <style>
-    :root{--bg:#0b0f14; --ink:#cfd7df; --muted:#93a1b1; --gold:#bfa76a; --glow:rgba(191,167,106,.28);}
+    :root{
+      --bg:#0b0f14; --ink:#cfd7df; --muted:#93a1b1; --gold:#bfa76a;
+      --glow:rgba(191,167,106,.28);
+    }
     *{box-sizing:border-box} html,body{height:100%}
     body{
       margin:0; background:#000; color:var(--ink);
@@ -23,39 +26,115 @@
     .typed{white-space:pre-wrap; font-size:22px; line-height:1.5; min-height:5.5em}
     .sig{margin-top:12px; color:var(--muted); font-size:15px; text-align:center}
 
-    /* Hourglass */
-    .hourglass{margin-top:16px; width:36px; height:56px; position:relative; opacity:0; transition:opacity .4s ease; filter:drop-shadow(0 0 16px var(--glow))}
-    .hourglass.show{opacity:1}
-    .hg-top,.hg-bot{position:absolute; left:0; right:0; height:26px; border:2px solid var(--gold); border-radius:10px}
-    .hg-top{top:0} .hg-bot{bottom:0}
+    /* Glitchy countdown */
+    .countwrap{margin-top:14px; display:flex; justify-content:center}
+    .countdown{
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+      font-size:24px; color:var(--gold); letter-spacing:.06em;
+      padding:10px 14px; border:1px solid rgba(191,167,106,.25); border-radius:12px;
+      background:rgba(191,167,106,.05);
+      position:relative; overflow:hidden;
+      filter: drop-shadow(0 0 14px var(--glow));
+      animation: cdJitter 2.1s infinite steps(2,end);
+    }
+    .countdown::after{
+      content:""; position:absolute; inset:0;
+      background:linear-gradient(180deg, transparent 0%, rgba(191,167,106,.05) 50%, transparent 100%);
+      mix-blend-mode:screen; pointer-events:none;
+      animation: scan 5s linear infinite;
+    }
+    @keyframes cdJitter{
+      0%{ transform: translateX(0) }
+      50%{ transform: translateX(-0.6px) }
+      100%{ transform: translateX(0.6px) }
+    }
+    @keyframes scan{
+      0%{ transform: translateY(-100%) }
+      100%{ transform: translateY(100%) }
+    }
+
+    /* Ancient / glitch hourglass (overlay, centered) */
+    .hourglass-wrap{
+      position:fixed; inset:0; display:flex; align-items:center; justify-content:center;
+      pointer-events:none; opacity:0; transition:opacity .35s ease;
+    }
+    .hourglass-wrap.show{opacity:1}
+    .hourglass{
+      width:84px; height:142px; position:relative;
+      filter: drop-shadow(0 0 18px var(--glow));
+      animation: glitchFlicker 1.6s infinite steps(2,end);
+    }
+    .hg-frame{
+      position:absolute; inset:0; border-radius:18px;
+      background:
+        radial-gradient(120% 100% at 50% 0%, rgba(191,167,106,.18), transparent 60%),
+        linear-gradient(180deg, #6d5a2c 0%, #3d341a 40%, #6a5a2f 100%);
+      box-shadow:
+        inset 0 0 0 2px rgba(191,167,106,.45),
+        inset 0 0 18px rgba(191,167,106,.15);
+      mask:
+        radial-gradient(150% 60% at 50% 15%, #000 56%, transparent 58%) top/100% 50% no-repeat,
+        radial-gradient(150% 60% at 50% 85%, #000 56%, transparent 58%) bottom/100% 50% no-repeat;
+      -webkit-mask:
+        radial-gradient(150% 60% at 50% 15%, #000 56%, transparent 58%) top/100% 50% no-repeat,
+        radial-gradient(150% 60% at 50% 85%, #000 56%, transparent 58%) bottom/100% 50% no-repeat;
+    }
+    .runes{
+      position:absolute; inset:8px; opacity:.18; pointer-events:none;
+      background:
+        repeating-linear-gradient(90deg, transparent 0 22px, rgba(191,167,106,.15) 22px 23px),
+        repeating-linear-gradient(0deg, transparent 0 18px, rgba(191,167,106,.08) 18px 19px);
+      mix-blend-mode: screen;
+      border-radius:14px;
+      mask:
+        radial-gradient(120% 60% at 50% 15%, #000 54%, transparent 58%) top/100% 50% no-repeat,
+        radial-gradient(120% 60% at 50% 85%, #000 54%, transparent 58%) bottom/100% 50% no-repeat;
+      -webkit-mask:
+        radial-gradient(120% 60% at 50% 15%, #000 54%, transparent 58%) top/100% 50% no-repeat,
+        radial-gradient(120% 60% at 50% 85%, #000 54%, transparent 58%) bottom/100% 50% no-repeat;
+    }
     .sand{
-      position:absolute; left:8px; right:8px; height:0; top:28px; background:radial-gradient(circle at 50% 0, var(--gold) 0 45%, transparent 55%);
+      position:absolute; left:18px; right:18px; height:0; top:71px;
+      background:radial-gradient(circle at 50% 0, var(--gold) 0 45%, transparent 55%);
       clip-path: polygon(0 0, 100% 0, 70% 100%, 30% 100%);
       animation: flow 10s linear forwards;
+      filter: drop-shadow(0 0 10px rgba(191,167,106,.22));
     }
-    @keyframes flow{from{height:0} to{height:24px}}
+    @keyframes flow{from{height:0} to{height:36px}}
+    @keyframes glitchFlicker{
+      0%{ transform: translateY(0); opacity:.95 }
+      50%{ transform: translateY(-0.8px); opacity:.86 }
+      100%{ transform: translateY(0.6px); opacity:.94 }
+    }
 
     /* Final screen + closed state */
     .fade-out{opacity:0}
-    .final{display:none; position:absolute; inset:0; background:#000; color:var(--ink); text-align:center; padding:24px; align-items:center; justify-content:center}
+    .final{
+      display:none; position:absolute; inset:0; background:#000; color:var(--ink);
+      text-align:center; padding:24px; align-items:center; justify-content:center;
+    }
     .final h2{color:var(--gold); text-transform:uppercase; letter-spacing:.06em; font-size:20px; margin:0 0 8px}
     .final p{margin:0; font-size:18px}
-    .closed{display:none; flex-direction:column; align-items:center; gap:10px; color:#7d8a98; text-align:center; padding:24px}
+    .closed{display:none; flex-direction:column; align-items:center; gap:14px; color:#7d8a98; text-align:center; padding:24px}
     .closed img{width:90px; opacity:.35}
     .closed small{color:#66717e}
+    .closed .countdown{font-size:20px}
 
     /* Accessibility: reduced motion */
     @media (prefers-reduced-motion: reduce){
       .wrap{transition:none}
-      .sand{animation:none; height:24px}
+      .hourglass{animation:none}
+      .sand{animation:none; height:36px}
+      .countdown{animation:none}
     }
   </style>
 </head>
 <body>
-  <!-- Closed state (shown on repeat visits) -->
+  <!-- Closed state (shown after 3 runs on this device) -->
   <div id="closed" class="closed">
     <img src="assets/stronghold-logo.png" alt="">
     <div>Gate closed.</div>
+    <div class="countwrap"><div id="cdClosed" class="countdown" aria-live="polite"></div></div>
     <small>— Within the Command Spine</small>
   </div>
 
@@ -70,14 +149,20 @@
     <section class="panel">
       <span class="label">Entry 0 — The Root Challenge</span>
       <div id="typed" class="typed"></div>
-
-      <!-- Hourglass -->
-      <div id="hg" class="hourglass" aria-hidden="true">
-        <div class="hg-top"></div><div class="hg-bot"></div><div class="sand"></div>
-      </div>
+      <!-- Glitchy countdown inside the box -->
+      <div class="countwrap"><div id="countdown" class="countdown" aria-live="polite"></div></div>
     </section>
     <div class="sig">— Within the Command Spine</div>
   </main>
+
+  <!-- Hourglass overlay (only during the 10s wait) -->
+  <div id="hgWrap" class="hourglass-wrap" aria-hidden="true">
+    <div class="hourglass" id="hourglass">
+      <div class="hg-frame"></div>
+      <div class="runes"></div>
+      <div class="sand"></div>
+    </div>
+  </div>
 
   <!-- Final message after fade -->
   <div id="final" class="final">
@@ -89,27 +174,48 @@
 
   <script>
     (function(){
-      const KEY = 'stronghold_gate_seen_v1';
+      const KEY = 'stronghold_gate_runs_v1';
 
-      // Reset helper for you: add ?reset=1 to clear the lock on this device
+      // Reset helper: ?reset=1 clears local lock for testing
       if(location.search.includes('reset=1')){
         try{ localStorage.removeItem(KEY); }catch(e){}
-        // remove query so replay is clean
         const url = location.origin + location.pathname;
         history.replaceState({}, '', url);
       }
 
-      // If already seen, show closed state and bail
+      // ===== Countdown target (local time): 13 April 2026, 00:00:00 =====
+      const target = new Date(2026, 3, 13, 0, 0, 0); // months are 0-based (3 = April)
+
+      function two(n){ return n<10 ? '0'+n : ''+n; }
+      function renderCountdown(el){
+        const now = new Date();
+        let diff = Math.max(0, target - now);
+        const d = Math.floor(diff / (1000*60*60*24)); diff -= d*(1000*60*60*24);
+        const h = Math.floor(diff / (1000*60*60)); diff -= h*(1000*60*60);
+        const m = Math.floor(diff / (1000*60)); diff -= m*(1000*60);
+        const s = Math.floor(diff / 1000);
+        el.textContent = `T‒ ${d}d:${two(h)}h:${two(m)}m:${two(s)}s`;
+      }
+
+      // Start both countdowns (main and closed) if present
+      const cd = document.getElementById('countdown');
+      const cdClosed = document.getElementById('cdClosed');
+      if(cd){ renderCountdown(cd); setInterval(()=>renderCountdown(cd), 1000); }
+      if(cdClosed){ renderCountdown(cdClosed); setInterval(()=>renderCountdown(cdClosed), 1000); }
+
+      // ===== Lock after 3 full runs =====
+      let runs = 0;
       try{
-        if(localStorage.getItem(KEY)==='1'){
+        runs = parseInt(localStorage.getItem(KEY) || '0', 10);
+        if(runs >= 3){
           document.getElementById('closed').style.display='flex';
           return;
         }
-      }catch(e){ /* localStorage may be blocked; continue gracefully */ }
+      }catch(e){ /* continue if storage blocked */ }
 
       const gate = document.getElementById('gate');
       const final = document.getElementById('final');
-      const hg = document.getElementById('hg');
+      const hgWrap = document.getElementById('hgWrap');
       const out = document.getElementById('typed');
 
       const text = `The gate will open
@@ -122,26 +228,32 @@ The third must outlast time.
 
 Name them.`;
 
-      // Typewriter
       const prefersReduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-      function afterTyping(){
-        // show hourglass for ~10s, then fade and final
-        hg.classList.add('show');
+
+      function endSequence(){
+        hgWrap.classList.remove('show');
+        gate.classList.add('fade-out');
         setTimeout(()=>{
-          gate.classList.add('fade-out');
-          setTimeout(()=>{
-            gate.style.display='none';
-            final.style.display='flex';
-            try{ localStorage.setItem(KEY, '1'); }catch(e){}
-          }, 700); // match CSS transition
-        }, 10000);
+          gate.style.display='none';
+          final.style.display='flex';
+          try{
+            const current = parseInt(localStorage.getItem(KEY) || '0', 10);
+            localStorage.setItem(KEY, String((isNaN(current)?0:current) + 1));
+          }catch(e){}
+        }, 700);
+      }
+
+      function afterTyping(){
+        hgWrap.classList.add('show');     // show hourglass for ~10s
+        setTimeout(endSequence, 10000);   // then fade to final
       }
 
       if(prefersReduced){
         out.textContent = text;
         afterTyping();
       } else {
-        let i = 0; const delay = 22; // typing speed
+        let i = 0;
+        const delay = 36; // slower typing for drama
         const timer = setInterval(()=>{
           out.textContent = text.slice(0, ++i);
           if(i>=text.length){ clearInterval(timer); afterTyping(); }
