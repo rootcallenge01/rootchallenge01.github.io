@@ -47,20 +47,9 @@
       color:var(--muted); margin-left:.6ch; letter-spacing:.02em;
       animation: flick .9s infinite steps(2,end);
     }
-    @keyframes cdJitter{
-      0%{ transform: translateX(0) }
-      50%{ transform: translateX(-0.6px) }
-      100%{ transform: translateX(0.6px) }
-    }
-    @keyframes scan{
-      0%{ transform: translateY(-100%) }
-      100%{ transform: translateY(100%) }
-    }
-    @keyframes flick{
-      0%{ opacity:.88; text-shadow:0 0 0 transparent }
-      50%{ opacity:.72; text-shadow:0 0 8px rgba(191,167,106,.18) }
-      100%{ opacity:.9; text-shadow:0 0 0 transparent }
-    }
+    @keyframes cdJitter{0%{transform:translateX(0)}50%{transform:translateX(-0.6px)}100%{transform:translateX(0.6px)}}
+    @keyframes scan{0%{transform:translateY(-100%)}100%{transform:translateY(100%)}}
+    @keyframes flick{0%{opacity:.88;text-shadow:0 0 0 transparent}50%{opacity:.72;text-shadow:0 0 8px rgba(191,167,106,.18)}100%{opacity:.9;text-shadow:0 0 0 transparent}}
 
     /* Ancient / glitch hourglass (overlay, centered) */
     .hourglass-wrap{
@@ -78,9 +67,7 @@
       background:
         radial-gradient(120% 100% at 50% 0%, rgba(191,167,106,.18), transparent 60%),
         linear-gradient(180deg, #6d5a2c 0%, #3d341a 40%, #6a5a2f 100%);
-      box-shadow:
-        inset 0 0 0 2px rgba(191,167,106,.45),
-        inset 0 0 18px rgba(191,167,106,.15);
+      box-shadow: inset 0 0 0 2px rgba(191,167,106,.45), inset 0 0 18px rgba(191,167,106,.15);
       mask:
         radial-gradient(150% 60% at 50% 15%, #000 56%, transparent 58%) top/100% 50% no-repeat,
         radial-gradient(150% 60% at 50% 85%, #000 56%, transparent 58%) bottom/100% 50% no-repeat;
@@ -93,8 +80,7 @@
       background:
         repeating-linear-gradient(90deg, transparent 0 22px, rgba(191,167,106,.15) 22px 23px),
         repeating-linear-gradient(0deg, transparent 0 18px, rgba(191,167,106,.08) 18px 19px);
-      mix-blend-mode: screen;
-      border-radius:14px;
+      mix-blend-mode: screen; border-radius:14px;
       mask:
         radial-gradient(120% 60% at 50% 15%, #000 54%, transparent 58%) top/100% 50% no-repeat,
         radial-gradient(120% 60% at 50% 85%, #000 54%, transparent 58%) bottom/100% 50% no-repeat;
@@ -110,11 +96,7 @@
       filter: drop-shadow(0 0 10px rgba(191,167,106,.22));
     }
     @keyframes flow{from{height:0} to{height:36px}}
-    @keyframes glitchFlicker{
-      0%{ transform: translateY(0); opacity:.95 }
-      50%{ transform: translateY(-0.8px); opacity:.86 }
-      100%{ transform: translateY(0.6px); opacity:.94 }
-    }
+    @keyframes glitchFlicker{0%{transform:translateY(0);opacity:.95}50%{transform:translateY(-0.8px);opacity:.86}100%{transform:translateY(0.6px);opacity:.94}}
 
     /* Final screen + closed state */
     .fade-out{opacity:0}
@@ -129,7 +111,7 @@
     .closed small{color:#66717e}
     .closed .countdown{font-size:20px}
 
-    /* Accessibility: reduced motion */
+    /* Accessibility */
     @media (prefers-reduced-motion: reduce){
       .wrap{transition:none}
       .hourglass{animation:none}
@@ -139,7 +121,7 @@
   </style>
 </head>
 <body>
-  <!-- Closed state (shown after 3 runs on this device) -->
+  <!-- Closed state (after 3 runs on this device) -->
   <div id="closed" class="closed">
     <img src="assets/stronghold-logo.png" alt="">
     <div>Gate closed.</div>
@@ -160,7 +142,6 @@
     <section class="panel">
       <span class="label">Entry 0 — The Root Challenge</span>
       <div id="typed" class="typed"></div>
-      <!-- Glitchy countdown inside the box -->
       <div class="countwrap">
         <div id="countdown" class="countdown" aria-live="polite"></div>
       </div>
@@ -189,16 +170,20 @@
     (function(){
       const KEY = 'stronghold_gate_runs_v1';
 
-      // Reset helper: ?reset=1 clears local lock for testing
+      // Reset helper for testing: ?reset=1
       if(location.search.includes('reset=1')){
         try{ localStorage.removeItem(KEY); }catch(e){}
-        const url = location.origin + location.pathname;
-        history.replaceState({}, '', url);
+        history.replaceState({}, '', location.origin + location.pathname);
       }
 
+      // ===== Timing targets =====
+      const TYPING_MS = 20000;   // 20s typing phase
+      const HOURGLASS_MS = 10000; // 10s hourglass
+      // Total = 30s from load to hourglass finish
+
       // ===== Countdown target: 13 April 2026, 12:01 AM AEST =====
-      // AEST is UTC+10 (April has no DST in AU), so target in UTC = 13 Apr 2026 02:01:00
-      const targetUTC = Date.UTC(2026, 3, 13, 2, 1, 0); // months are 0-based (3 = April)
+      // AEST is UTC+10 in April ⇒ 13 Apr 2026 02:01:00 UTC
+      const targetUTC = Date.UTC(2026, 3, 13, 2, 1, 0);
 
       function two(n){ return n<10 ? '0'+n : ''+n; }
       function renderCountdown(el){
@@ -208,25 +193,19 @@
         const h = Math.floor(diff / (1000*60*60)); diff -= h*(1000*60*60);
         const m = Math.floor(diff / (1000*60)); diff -= m*(1000*60);
         const s = Math.floor(diff / 1000);
-        // AEST clue with subtle flicker
         el.innerHTML = `T‒ ${d}d:${two(h)}h:${two(m)}m:${two(s)}s <span class="aest">(13 Apr 2026 — 12:01 AEST)</span>`;
       }
 
-      // Start countdowns (main + closed)
       const cd = document.getElementById('countdown');
       const cdClosed = document.getElementById('cdClosed');
       if(cd){ renderCountdown(cd); setInterval(()=>renderCountdown(cd), 1000); }
       if(cdClosed){ renderCountdown(cdClosed); setInterval(()=>renderCountdown(cdClosed), 1000); }
 
       // ===== Lock after 3 full runs =====
-      let runs = 0;
       try{
-        runs = parseInt(localStorage.getItem(KEY) || '0', 10);
-        if(runs >= 3){
-          document.getElementById('closed').style.display='flex';
-          return;
-        }
-      }catch(e){ /* storage blocked? proceed without lock */ }
+        const runs = parseInt(localStorage.getItem(KEY) || '0', 10);
+        if(runs >= 3){ document.getElementById('closed').style.display='flex'; return; }
+      }catch(e){}
 
       const gate = document.getElementById('gate');
       const final = document.getElementById('final');
@@ -252,27 +231,34 @@ Name them.`;
           gate.style.display='none';
           final.style.display='flex';
           try{
-            const current = parseInt(localStorage.getItem(KEY) || '0', 10);
-            localStorage.setItem(KEY, String((isNaN(current)?0:current) + 1));
+            const current = parseInt(localStorage.getItem(KEY) || '0', 10) || 0;
+            localStorage.setItem(KEY, String(current + 1));
           }catch(e){}
         }, 700);
       }
 
       function afterTyping(){
-        hgWrap.classList.add('show');     // show hourglass for ~10s
-        setTimeout(endSequence, 10000);   // then fade to final
+        hgWrap.classList.add('show');           // show for exactly 10s
+        setTimeout(endSequence, HOURGLASS_MS);  // then fade to final
       }
 
       if(prefersReduced){
+        // show full text, but still respect the 20s phase timing
         out.textContent = text;
-        afterTyping();
+        setTimeout(afterTyping, TYPING_MS);
       } else {
+        const start = performance.now();
         let i = 0;
-        const delay = 36; // slower typing for drama
+        const perChar = Math.max(30, Math.floor(TYPING_MS / text.length)); // auto-fit to ~20s
         const timer = setInterval(()=>{
           out.textContent = text.slice(0, ++i);
-          if(i>=text.length){ clearInterval(timer); afterTyping(); }
-        }, delay);
+          if(i>=text.length){
+            clearInterval(timer);
+            const elapsed = performance.now() - start;
+            const remaining = Math.max(0, TYPING_MS - elapsed);
+            setTimeout(afterTyping, remaining);
+          }
+        }, perChar);
       }
     })();
   </script>
