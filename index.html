@@ -1,63 +1,212 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>The Stronghold Codex — Gate Closed</title>
-  <meta name="robots" content="noindex,nofollow">
-  <!-- Orbitron only for typed text -->
+  <meta name="robots" content="noindex,nofollow" />
+  <!-- Orbitron for typed text only -->
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
   <style>
-    :root{--bg:#0b0f14; --ink:#cfd7df; --muted:#93a1b1; --gold:#bfa76a;}
+    :root{
+      --bg:#0b0f14; --ink:#cfd7df; --muted:#93a1b1; --gold:#bfa76a;
+      --glow:rgba(191,167,106,.28);
+    }
     *{box-sizing:border-box} html,body{height:100%}
-    body{margin:0; background:#000; color:var(--ink);
-         font-family:sans-serif; display:flex; align-items:center; justify-content:center}
-    .wrap{max-width:900px; width:100%; padding:28px}
+    body{
+      margin:0; background:#000; color:var(--ink);
+      font-family:ui-serif,Georgia,serif; display:flex; align-items:center; justify-content:center;
+    }
+    .wrap{max-width:900px; width:100%; padding:28px; transition:opacity .6s ease}
     .center{display:flex; flex-direction:column; align-items:center}
-    img{width:280px; height:auto; filter:drop-shadow(0 0 22px rgba(191,167,106,.25))}
+    /* Logo x2 */
+    img{width:280px; height:auto; filter:drop-shadow(0 0 22px var(--glow))}
     h1{margin:12px 0 6px; font-size:20px; letter-spacing:.14em; text-transform:uppercase; color:var(--gold)}
     .tag{margin:8px 0 20px; color:var(--muted); font-size:18px; text-align:center}
     .divider{height:1px; margin:8px 0 24px; background:linear-gradient(90deg,transparent, rgba(191,167,106,.45), transparent)}
     .panel{border:1px solid rgba(191,167,106,.25); border-radius:18px; background:rgba(191,167,106,.06); padding:18px 18px 22px}
     .label{display:inline-block; margin-bottom:8px; color:var(--gold); font-variant:small-caps; letter-spacing:.06em}
-    .typed{white-space:pre-wrap; font-size:22px; line-height:1.5; min-height:5.5em; font-family:'Orbitron', sans-serif;}
-    .sig{margin-top:12px; color:var(--gold); font-size:15px; text-align:center}
-    .fade-out{animation: fadeOut 3s forwards;}
-    @keyframes fadeOut { to { opacity: 0; visibility: hidden; } }
-    .final-message { display:none; font-size: 20px; color: var(--gold); text-align:center; }
-    #countdown { margin-top:12px; font-size:18px; color:var(--ink); }
+    /* Typed text only in Orbitron */
+    .typed{white-space:pre-wrap; font-size:22px; line-height:1.5; min-height:5.5em; font-family:'Orbitron', sans-serif}
+    /* Platinum location line */
+    .sig{margin-top:12px; color:#E5E4E2; font-size:15px; text-align:center}
+
+    /* Tap overlay */
+    .overlay{
+      position:fixed; inset:0; background:#000; display:flex; align-items:center; justify-content:center;
+      transition: opacity .5s ease, visibility .5s ease; z-index:50;
+    }
+    .overlay.hide{opacity:0; visibility:hidden}
+    .pill{
+      color:var(--ink); border:1px solid #2a2f35; padding:12px 16px; border-radius:14px;
+      background:linear-gradient(180deg,#0e1318,#0a0d12);
+      box-shadow:0 0 0 1px rgba(255,255,255,.04), 0 8px 30px rgba(0,0,0,.6), 0 0 80px var(--glow);
+      font-family:ui-monospace,Menlo,Consolas,monospace; letter-spacing:.06em; cursor:pointer;
+    }
+    .pill b{color:var(--gold)}
+    .hint{margin-top:10px; color:#6d7a88; font-size:12px; text-align:center}
+
+    /* Glitchy countdown */
+    .countwrap{margin-top:14px; display:flex; justify-content:center}
+    .countdown{
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+      font-size:24px; color:var(--gold); letter-spacing:.06em;
+      padding:10px 14px; border:1px solid rgba(191,167,106,.25); border-radius:12px;
+      background:rgba(191,167,106,.05);
+      position:relative; overflow:hidden;
+      filter: drop-shadow(0 0 14px var(--glow));
+      animation: cdJitter 2.1s infinite steps(2,end);
+    }
+    .countdown::after{
+      content:""; position:absolute; inset:0;
+      background:linear-gradient(180deg, transparent 0%, rgba(191,167,106,.05) 50%, transparent 100%);
+      mix-blend-mode:screen; pointer-events:none;
+      animation: scan 5s linear infinite;
+    }
+    .aest{
+      color:var(--muted); margin-left:.6ch; letter-spacing:.02em;
+      animation: flick .9s infinite steps(2,end);
+    }
+    @keyframes cdJitter{0%{transform:translateX(0)}50%{transform:translateX(-0.6px)}100%{transform:translateX(0.6px)}}
+    @keyframes scan{0%{transform:translateY(-100%)}100%{transform:translateY(100%)}}
+    @keyframes flick{0%{opacity:.88;text-shadow:0 0 0 transparent}50%{opacity:.72;text-shadow:0 0 8px rgba(191,167,106,.18)}100%{opacity:.9;text-shadow:0 0 0 transparent}}
+
+    /* Ancient / glitch hourglass (overlay, centered) */
+    .hourglass-wrap{
+      position:fixed; inset:0; display:flex; align-items:center; justify-content:center;
+      pointer-events:none; opacity:0; transition:opacity .35s ease; z-index:40;
+    }
+    .hourglass-wrap.show{opacity:1}
+    .hourglass{
+      width:84px; height:142px; position:relative;
+      filter: drop-shadow(0 0 18px var(--glow));
+      animation: glitchFlicker 1.6s infinite steps(2,end);
+    }
+    .hg-frame{
+      position:absolute; inset:0; border-radius:18px;
+      background:
+        radial-gradient(120% 100% at 50% 0%, rgba(191,167,106,.18), transparent 60%),
+        linear-gradient(180deg, #6d5a2c 0%, #3d341a 40%, #6a5a2f 100%);
+      box-shadow: inset 0 0 0 2px rgba(191,167,106,.45), inset 0 0 18px rgba(191,167,106,.15);
+      mask:
+        radial-gradient(150% 60% at 50% 15%, #000 56%, transparent 58%) top/100% 50% no-repeat,
+        radial-gradient(150% 60% at 50% 85%, #000 56%, transparent 58%) bottom/100% 50% no-repeat;
+      -webkit-mask:
+        radial-gradient(150% 60% at 50% 15%, #000 56%, transparent 58%) top/100% 50% no-repeat,
+        radial-gradient(150% 60% at 50% 85%, #000 56%, transparent 58%) bottom/100% 50% no-repeat;
+    }
+    .runes{
+      position:absolute; inset:8px; opacity:.18; pointer-events:none;
+      background:
+        repeating-linear-gradient(90deg, transparent 0 22px, rgba(191,167,106,.15) 22px 23px),
+        repeating-linear-gradient(0deg, transparent 0 18px, rgba(191,167,106,.08) 18px 19px);
+      mix-blend-mode: screen; border-radius:14px;
+      mask:
+        radial-gradient(120% 60% at 50% 15%, #000 54%, transparent 58%) top/100% 50% no-repeat,
+        radial-gradient(120% 60% at 50% 85%, #000 54%, transparent 58%) bottom/100% 50% no-repeat;
+      -webkit-mask:
+        radial-gradient(120% 60% at 50% 15%, #000 54%, transparent 58%) top/100% 50% no-repeat,
+        radial-gradient(120% 60% at 50% 85%, #000 54%, transparent 58%) bottom/100% 50% no-repeat;
+    }
+    .sand{
+      position:absolute; left:18px; right:18px; height:0; top:71px;
+      background:radial-gradient(circle at 50% 0, var(--gold) 0 45%, transparent 55%);
+      clip-path: polygon(0 0, 100% 0, 70% 100%, 30% 100%);
+      animation: flow 10s linear forwards;
+      filter: drop-shadow(0 0 10px rgba(191,167,106,.22));
+    }
+    @keyframes flow{from{height:0} to{height:36px}}
+    @keyframes glitchFlicker{0%{transform:translateY(0);opacity:.95}50%{transform:translateY(-0.8px);opacity:.86}100%{transform:translateY(0.6px);opacity:.94}}
+
+    /* Final screen + closed state */
+    .fade-out{opacity:0}
+    .final{
+      display:none; position:absolute; inset:0; background:#000; color:var(--ink);
+      text-align:center; padding:24px; align-items:center; justify-content:center;
+    }
+    .final h2{color:var(--gold); text-transform:uppercase; letter-spacing:.06em; font-size:20px; margin:0 0 8px}
+    .final p{margin:0; font-size:18px}
+    .closed{display:none; flex-direction:column; align-items:center; gap:14px; color:#7d8a98; text-align:center; padding:24px}
+    .closed img{width:90px; opacity:.35}
+    .closed small{color:#66717e}
+    .closed .countdown{font-size:20px}
+
+    /* Accessibility */
+    @media (prefers-reduced-motion: reduce){
+      .wrap{transition:none}
+      .hourglass{animation:none}
+      .sand{animation:none; height:36px}
+      .countdown,.aest{animation:none}
+    }
   </style>
 </head>
 <body>
-  <main class="wrap" aria-live="polite" id="main-content">
+  <!-- Closed state (after 3 runs on this device) -->
+  <div id="closed" class="closed">
+    <img src="assets/stronghold-logo.png" alt="">
+    <div>Gate closed.</div>
+    <div class="countwrap">
+      <div id="cdClosed" class="countdown" aria-live="polite"></div>
+    </div>
+    <small>— Within the Command Spine</small>
+  </div>
+
+  <!-- Subtle tap-to-begin overlay -->
+  <div id="overlay" class="overlay" role="button" tabindex="0" aria-label="Begin the Root Challenge">
+    <div>
+      <div class="pill"><b>Tap</b> to begin</div>
+      <div class="hint">or press Enter</div>
+    </div>
+  </div>
+
+  <!-- Main gate -->
+  <main class="wrap" aria-live="polite" id="gate">
     <div class="center">
       <img src="assets/stronghold-logo.png" alt="Stronghold crest">
       <h1>The Stronghold Codex — Gate Closed</h1>
       <div class="tag">Stronghold stands; its soul waits outside linear time.</div>
-      <div id="countdown"></div>
       <div class="divider" aria-hidden="true"></div>
     </div>
     <section class="panel">
       <span class="label">Entry 0 — The Root Challenge</span>
       <div id="typed" class="typed"></div>
+      <div class="countwrap">
+        <div id="countdown" class="countdown" aria-live="polite"></div>
+      </div>
     </section>
     <div class="sig">— Within the Command Spine</div>
   </main>
 
-  <div id="final-message" class="final-message">Return when the truth is ready to pass the Gate.</div>
+  <!-- Hourglass overlay (only during the 10s wait) -->
+  <div id="hgWrap" class="hourglass-wrap" aria-hidden="true">
+    <div class="hourglass" id="hourglass">
+      <div class="hg-frame"></div>
+      <div class="runes"></div>
+      <div class="sand"></div>
+    </div>
+  </div>
+
+  <!-- Final message after fade -->
+  <div id="final" class="final">
+    <div>
+      <h2>The Gate Remains Closed</h2>
+      <p>Return to where you found this, and bring your answer.</p>
+    </div>
+  </div>
 
   <script>
     (function(){
       const KEY = 'stronghold_gate_runs_v1';
 
+      // Reset helper for testing: ?reset=1
       if(location.search.includes('reset=1')){
         try{ localStorage.removeItem(KEY); }catch(e){}
-        const url = location.origin + location.pathname;
-        history.replaceState({}, '', url);
+        history.replaceState({}, '', location.origin + location.pathname);
       }
 
-      // Countdown target: 13 April 2026, 12:01 AM AEST (UTC+10, so 02:01 UTC)
+      // ===== Countdown target: 13 April 2026, 12:01 AM AEST (UTC+10) =====
       const targetUTC = Date.UTC(2026, 3, 13, 2, 1, 0);
+
       function two(n){ return n<10 ? '0'+n : ''+n; }
       function renderCountdown(el){
         const now = new Date();
@@ -66,25 +215,31 @@
         const h = Math.floor(diff / (1000*60*60)); diff -= h*(1000*60*60);
         const m = Math.floor(diff / (1000*60)); diff -= m*(1000*60);
         const s = Math.floor(diff / 1000);
-        el.textContent = `${d}d:${two(h)}h:${two(m)}m:${two(s)}s  (13 Apr 2026 — 12:01 AEST)`;
+        /* Removed the "T‒ " prefix per your request */
+        el.innerHTML = `${d}d:${two(h)}h:${two(m)}m:${two(s)}s <span class="aest">(13 Apr 2026 — 12:01 AEST)</span>`;
       }
 
+      // Start countdowns (main + closed)
       const cd = document.getElementById('countdown');
+      const cdClosed = document.getElementById('cdClosed');
       if(cd){ renderCountdown(cd); setInterval(()=>renderCountdown(cd), 1000); }
+      if(cdClosed){ renderCountdown(cdClosed); setInterval(()=>renderCountdown(cdClosed), 1000); }
 
-      let runs = 0;
+      // ===== Lock after 3 full runs =====
       try{
-        runs = parseInt(localStorage.getItem(KEY) || '0', 10);
-        if(runs >= 3){
-          document.getElementById('main-content').style.display='none';
-          document.getElementById('final-message').style.display='flex';
-          return;
-        }
+        const runs = parseInt(localStorage.getItem(KEY) || '0', 10);
+        if(runs >= 3){ document.getElementById('closed').style.display='flex'; document.getElementById('overlay').style.display='none'; return; }
       }catch(e){}
 
-      const mainContent = document.getElementById('main-content');
-      const finalMessage = document.getElementById('final-message');
+      const gate = document.getElementById('gate');
+      const final = document.getElementById('final');
+      const hgWrap = document.getElementById('hgWrap');
       const out = document.getElementById('typed');
+      const overlay = document.getElementById('overlay');
+
+      // ===== Sequence timings =====
+      const TYPING_MS = 20000;     // 20s typing
+      const HOURGLASS_MS = 10000;  // 10s hourglass
 
       const text = `The gate will open
 to three truths
@@ -98,33 +253,138 @@ Name them.`;
 
       const prefersReduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
+      // ===== Web Audio (hum + heartbeat + Morse) =====
+      let ac, master, humGain, beatGain, chimeGain;
+      const PHRASE = "ONLY IN THE ROOST OF THE IRON-FEATHERED ORACLE WILL THE ARCHITECTS ATTEND";
+      const MORSE = {A:'.-',B:'-...',C:'-.-.',D:'-..',E:'.',F:'..-.',G:'--.',H:'....',I:'..',J:'.---',K:'-.-',L:'.-..',M:'--',N:'-.',O:'---',P:'.--.',Q:'--.-',R:'.-.',S:'...',T:'-',U:'..-',V:'...-',W:'.--',X:'-..-',Y:'-.--',Z:'--..','0':'-----','1':'.----','2':'..---','3':'...--','4':'....-','5':'.....','6':'-....','7':'--...','8':'---..','9':'----.'};
+
+      function initAudio(){
+        if(ac) return;
+        try{
+          ac = new (window.AudioContext || window.webkitAudioContext)();
+          master = ac.createGain(); master.gain.value = 0.6; master.connect(ac.destination);
+
+          // Hum
+          const humOsc = ac.createOscillator(); humOsc.type='sine'; humOsc.frequency.value = 60;
+          humGain = ac.createGain(); humGain.gain.value = 0.06;
+          humOsc.connect(humGain).connect(master); humOsc.start();
+
+          // Heartbeat (soft thump ~every 8s)
+          beatGain = ac.createGain(); beatGain.gain.value = 0.0; beatGain.connect(master);
+          const beatOsc = ac.createOscillator(); beatOsc.type='sine'; beatOsc.frequency.value = 50;
+          beatOsc.connect(beatGain); beatOsc.start();
+          const now = ac.currentTime;
+          for(let k=0;k<12;k++){
+            const at = now + 4 + k*8;
+            beatGain.gain.setValueAtTime(0.0, at);
+            beatGain.gain.linearRampToValueAtTime(0.08, at + 0.02);
+            beatGain.gain.exponentialRampToValueAtTime(0.001, at + 0.28);
+          }
+
+          // Chimes bus
+          chimeGain = ac.createGain(); chimeGain.gain.value = 1.0; chimeGain.connect(master);
+        }catch(e){ /* audio failed; proceed silently */ }
+      }
+
+      function scheduleMorse(){
+        if(!ac) return;
+        const unit = 0.10; // 100ms dot
+        const baseFreq = 1320; // chime pitch
+        let t = ac.currentTime + 0.5; // slight delay
+
+        function tone(len){
+          const osc = ac.createOscillator(); osc.type='sine';
+          osc.frequency.value = baseFreq + (Math.random()-0.5)*10; // tiny detune
+          const g = ac.createGain(); g.gain.value = 0.0;
+          // faint echo
+          const dly = ac.createDelay(0.3); dly.delayTime.value = 0.18 + Math.random()*0.05;
+          const fb = ac.createGain(); fb.gain.value = 0.2;
+          g.connect(dly); dly.connect(fb); fb.connect(dly); dly.connect(master);
+
+          osc.connect(g); g.connect(chimeGain);
+          osc.start(t);
+          g.gain.setValueAtTime(0.0, t);
+          g.gain.linearRampToValueAtTime(0.15, t+0.01);
+          g.gain.setTargetAtTime(0.0, t+len-0.01, 0.02);
+          osc.stop(t + len + 0.05);
+          t += len;
+        }
+
+        const up = PHRASE.toUpperCase();
+        for(let i=0;i<up.length;i++){
+          const ch = up[i];
+          if(ch===' '){ t += unit*7; continue; } // word gap
+          const code = MORSE[ch]; if(!code) continue;
+          for(let j=0;j<code.length;j++){
+            tone(code[j]==='.' ? unit*1 : unit*3);
+            t += unit*1; // intra-char gap
+          }
+          t += unit*2; // letter gap extra
+          t += (Math.random()-0.5)*0.04; // organic wobble
+        }
+        chimeGain.gain.setTargetAtTime(0.0, t+0.2, 0.4);
+      }
+
       function endSequence(){
-        mainContent.classList.add('fade-out');
+        hgWrap.classList.remove('show');
+        gate.classList.add('fade-out');
         setTimeout(()=>{
-          mainContent.style.display='none';
-          finalMessage.style.display='flex';
+          gate.style.display='none';
+          final.style.display='flex';
           try{
-            const current = parseInt(localStorage.getItem(KEY) || '0', 10);
-            localStorage.setItem(KEY, String((isNaN(current)?0:current) + 1));
+            const current = parseInt(localStorage.getItem(KEY) || '0', 10) || 0;
+            localStorage.setItem(KEY, String(current + 1));
           }catch(e){}
-        }, 3000);
+        }, 700);
       }
 
       function afterTyping(){
-        setTimeout(endSequence, 10000);
+        hgWrap.classList.add('show');     // show hourglass
+        scheduleMorse();                  // play Morse during hourglass
+        setTimeout(endSequence, 10000);   // 10s, then fade to final
       }
 
-      if(prefersReduced){
-        out.textContent = text;
-        afterTyping();
-      } else {
-        let i = 0;
-        const delay = 72; // slowed typing
-        const timer = setInterval(()=>{
-          out.textContent = text.slice(0, ++i);
-          if(i>=text.length){ clearInterval(timer); afterTyping(); }
-        }, delay);
+      function startSequence(){
+        // Start typing timeline (~20s), then hourglass
+        if(prefersReduced){
+          document.getElementById('typed').textContent = text;
+          setTimeout(afterTyping, 20000);
+        } else {
+          const start = performance.now();
+          const out = document.getElementById('typed');
+          let i = 0;
+          const perChar = Math.max(30, Math.floor(20000 / text.length));
+          const timer = setInterval(()=>{
+            out.textContent = text.slice(0, ++i);
+            if(i>=text.length){
+              clearInterval(timer);
+              const elapsed = performance.now() - start;
+              const remaining = Math.max(0, 20000 - elapsed);
+              setTimeout(afterTyping, remaining);
+            }
+          }, perChar);
+        }
       }
+
+      // Overlay interaction → init audio + hide overlay + start sequence
+      function begin(){
+        overlay.classList.add('hide');
+        // Audio
+        try{
+          initAudio();
+          if(ac && ac.state==='suspended'){ ac.resume().catch(()=>{}); }
+        }catch(e){}
+        // Start visuals
+        startSequence();
+      }
+
+      // Bind overlay events
+      overlay.addEventListener('click', begin, {once:true});
+      overlay.addEventListener('keydown', (e)=>{ if(e.key==='Enter' || e.key===' '){ e.preventDefault(); begin(); }}, {once:true});
+
+      // If gate is locked (3 runs), skip overlay entirely
+      // (Handled above in lock check)
+
     })();
   </script>
 </body>
