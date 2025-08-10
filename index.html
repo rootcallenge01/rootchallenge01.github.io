@@ -1,18 +1,20 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>The Stronghold Codex — Gate Closed</title>
-  <meta name="robots" content="noindex,nofollow">
+  <meta name="robots" content="noindex,nofollow" />
   <style>
-    :root{--bg:#0b0f14; --ink:#cfd7df; --muted:#93a1b1; --gold:#bfa76a;}
+    :root{--bg:#0b0f14; --ink:#cfd7df; --muted:#93a1b1; --gold:#bfa76a; --glow:rgba(191,167,106,.28);}
     *{box-sizing:border-box} html,body{height:100%}
-    body{margin:0; background:#000; color:var(--ink);
-         font-family:ui-serif,Georgia,serif; display:flex; align-items:center; justify-content:center}
-    .wrap{max-width:900px; width:100%; padding:28px}
+    body{
+      margin:0; background:#000; color:var(--ink);
+      font-family:ui-serif,Georgia,serif; display:flex; align-items:center; justify-content:center;
+    }
+    .wrap{max-width:900px; width:100%; padding:28px; transition:opacity .6s ease}
     .center{display:flex; flex-direction:column; align-items:center}
-    img{width:140px; height:auto; filter:drop-shadow(0 0 22px rgba(191,167,106,.25))}
+    img{width:140px; height:auto; filter:drop-shadow(0 0 22px var(--glow))}
     h1{margin:12px 0 6px; font-size:20px; letter-spacing:.14em; text-transform:uppercase; color:var(--gold)}
     .tag{margin:8px 0 20px; color:var(--muted); font-size:18px; text-align:center}
     .divider{height:1px; margin:8px 0 24px; background:linear-gradient(90deg,transparent, rgba(191,167,106,.45), transparent)}
@@ -20,13 +22,45 @@
     .label{display:inline-block; margin-bottom:8px; color:var(--gold); font-variant:small-caps; letter-spacing:.06em}
     .typed{white-space:pre-wrap; font-size:22px; line-height:1.5; min-height:5.5em}
     .sig{margin-top:12px; color:var(--muted); font-size:15px; text-align:center}
-    .fade-out{animation: fadeOut 3s forwards;}
-    @keyframes fadeOut { to { opacity: 0; visibility: hidden; } }
-    .final-message { display:none; font-size: 20px; color: var(--gold); text-align:center; }
+
+    /* Hourglass */
+    .hourglass{margin-top:16px; width:36px; height:56px; position:relative; opacity:0; transition:opacity .4s ease; filter:drop-shadow(0 0 16px var(--glow))}
+    .hourglass.show{opacity:1}
+    .hg-top,.hg-bot{position:absolute; left:0; right:0; height:26px; border:2px solid var(--gold); border-radius:10px}
+    .hg-top{top:0} .hg-bot{bottom:0}
+    .sand{
+      position:absolute; left:8px; right:8px; height:0; top:28px; background:radial-gradient(circle at 50% 0, var(--gold) 0 45%, transparent 55%);
+      clip-path: polygon(0 0, 100% 0, 70% 100%, 30% 100%);
+      animation: flow 10s linear forwards;
+    }
+    @keyframes flow{from{height:0} to{height:24px}}
+
+    /* Final screen + closed state */
+    .fade-out{opacity:0}
+    .final{display:none; position:absolute; inset:0; background:#000; color:var(--ink); text-align:center; padding:24px; align-items:center; justify-content:center}
+    .final h2{color:var(--gold); text-transform:uppercase; letter-spacing:.06em; font-size:20px; margin:0 0 8px}
+    .final p{margin:0; font-size:18px}
+    .closed{display:none; flex-direction:column; align-items:center; gap:10px; color:#7d8a98; text-align:center; padding:24px}
+    .closed img{width:90px; opacity:.35}
+    .closed small{color:#66717e}
+
+    /* Accessibility: reduced motion */
+    @media (prefers-reduced-motion: reduce){
+      .wrap{transition:none}
+      .sand{animation:none; height:24px}
+    }
   </style>
 </head>
 <body>
-  <main class="wrap" aria-live="polite" id="main-content">
+  <!-- Closed state (shown on repeat visits) -->
+  <div id="closed" class="closed">
+    <img src="assets/stronghold-logo.png" alt="">
+    <div>Gate closed.</div>
+    <small>— Within the Command Spine</small>
+  </div>
+
+  <!-- Main gate -->
+  <main class="wrap" aria-live="polite" id="gate">
     <div class="center">
       <img src="assets/stronghold-logo.png" alt="Stronghold crest">
       <h1>The Stronghold Codex — Gate Closed</h1>
@@ -36,14 +70,49 @@
     <section class="panel">
       <span class="label">Entry 0 — The Root Challenge</span>
       <div id="typed" class="typed"></div>
+
+      <!-- Hourglass -->
+      <div id="hg" class="hourglass" aria-hidden="true">
+        <div class="hg-top"></div><div class="hg-bot"></div><div class="sand"></div>
+      </div>
     </section>
     <div class="sig">— Within the Command Spine</div>
   </main>
 
-  <div id="final-message" class="final-message">Return when the truth is ready to pass the Gate.</div>
+  <!-- Final message after fade -->
+  <div id="final" class="final">
+    <div>
+      <h2>The Gate Remains Closed</h2>
+      <p>Return to where you found this, and bring your answer.</p>
+    </div>
+  </div>
 
   <script>
-    const text = `The gate will open
+    (function(){
+      const KEY = 'stronghold_gate_seen_v1';
+
+      // Reset helper for you: add ?reset=1 to clear the lock on this device
+      if(location.search.includes('reset=1')){
+        try{ localStorage.removeItem(KEY); }catch(e){}
+        // remove query so replay is clean
+        const url = location.origin + location.pathname;
+        history.replaceState({}, '', url);
+      }
+
+      // If already seen, show closed state and bail
+      try{
+        if(localStorage.getItem(KEY)==='1'){
+          document.getElementById('closed').style.display='flex';
+          return;
+        }
+      }catch(e){ /* localStorage may be blocked; continue gracefully */ }
+
+      const gate = document.getElementById('gate');
+      const final = document.getElementById('final');
+      const hg = document.getElementById('hg');
+      const out = document.getElementById('typed');
+
+      const text = `The gate will open
 to three truths
 spoken in the right order.
 
@@ -53,29 +122,32 @@ The third must outlast time.
 
 Name them.`;
 
-    const out = document.getElementById('typed');
-    const mainContent = document.getElementById('main-content');
-    const finalMessage = document.getElementById('final-message');
-    let i=0;
-    const delay = 22; // typing speed
-
-    function typeWriter(){
-      if(i < text.length){
-        out.textContent += text.charAt(i);
-        i++;
-        setTimeout(typeWriter, delay);
-      } else {
-        // Pause 10 seconds after typing finishes, then fade out
-        setTimeout(() => {
-          mainContent.classList.add('fade-out');
-          setTimeout(() => {
-            mainContent.style.display = 'none';
-            finalMessage.style.display = 'block';
-          }, 3000); // matches fade-out duration
+      // Typewriter
+      const prefersReduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      function afterTyping(){
+        // show hourglass for ~10s, then fade and final
+        hg.classList.add('show');
+        setTimeout(()=>{
+          gate.classList.add('fade-out');
+          setTimeout(()=>{
+            gate.style.display='none';
+            final.style.display='flex';
+            try{ localStorage.setItem(KEY, '1'); }catch(e){}
+          }, 700); // match CSS transition
         }, 10000);
       }
-    }
-    typeWriter();
+
+      if(prefersReduced){
+        out.textContent = text;
+        afterTyping();
+      } else {
+        let i = 0; const delay = 22; // typing speed
+        const timer = setInterval(()=>{
+          out.textContent = text.slice(0, ++i);
+          if(i>=text.length){ clearInterval(timer); afterTyping(); }
+        }, delay);
+      }
+    })();
   </script>
 </body>
 </html>
